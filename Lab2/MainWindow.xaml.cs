@@ -1,11 +1,92 @@
 ﻿using System.Reflection;
 using System.Security.Cryptography;
 using System.Windows;
+using System.Net.Sockets;
+using System.Net;
+using System.Text;
+using System.Threading;
 
 namespace Lab2
 {
     public partial class MainWindow : Window
     {
+        public static IPAddress remoteIP;
+        public static int localPort;
+        public static int remotePort;   
+
+        private static void Send(string datagram)
+        {
+            // Создаем UdpClient
+            UdpClient sender = new UdpClient();
+
+            // Создаем endPoint по информации об удаленном хосте
+            IPEndPoint endPoint = new IPEndPoint(remoteIP, remotePort);
+
+            try
+            {
+                // Преобразуем данные в массив байтов
+                byte[] bytes = Encoding.UTF8.GetBytes(datagram);
+
+                // Отправляем данные
+                sender.Send(bytes, bytes.Length, endPoint);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Возникло исключение: " + ex.ToString() + "\n  " + ex.Message);
+            }
+            finally
+            {
+                // Закрыть соединение
+                sender.Close();
+            }
+        }
+
+        private void saveButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                localPort = Convert.ToInt16(localPortTextBox.Text);
+                remotePort = Convert.ToInt16(remoteTextBox.Text);
+                remoteIP = IPAddress.Parse(ipTextBox.Text);
+                while (true)
+                {
+                    Send(enterTextBox.Text);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Возникло исключение: " + ex.ToString() + "\n" + ex.Message);
+            }
+        }
+
+        public static void Receiver()
+        {
+            // Создаем UdpClient для чтения входящих данных
+            UdpClient receivingUdpClient = new UdpClient(localPort);
+
+            IPEndPoint RemoteIpEndPoint = null;
+
+            try
+            {
+                Console.WriteLine(
+                   "\n-----------*******Общий чат*******-----------");
+
+                while (true)
+                {
+                    byte[] receiveBytes = receivingUdpClient.Receive(
+                       ref RemoteIpEndPoint);
+
+                    // Преобразуем и отображаем данные
+                    string returnData = Encoding.UTF8.GetString(receiveBytes);
+                    Console.WriteLine(" --> " + returnData.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Возникло исключение: " + ex.ToString() + "\n  " + ex.Message);
+            }
+        }
+
         Dictionary<char, string> utf8ToKoi8rDictionary = new Dictionary<char, string>
             {
                 { 'a', "128" },
@@ -159,7 +240,7 @@ namespace Lab2
 
         public MainWindow()
         {
-            InitializeComponent();
+            InitializeComponent();  
         }
 
         private void codeButton_Click(object sender, RoutedEventArgs e)
@@ -197,13 +278,13 @@ namespace Lab2
                 resultTextBox.Text += binary;
                 resultTextBox.Text += "\n\n";
 
-                historyTextBox.Text += resultTextBox.Text;
+                //historyTextBox.Text += resultTextBox.Text;
             }
         }
 
         private void clearButton_Click(object sender, RoutedEventArgs e)
         {
-            historyTextBox.Clear();
+            //historyTextBox.Clear();
         }
 
         private void decodeButton_Click(object sender, RoutedEventArgs e)
@@ -231,7 +312,36 @@ namespace Lab2
                     var key = utf8ToKoi8rDictionary.FirstOrDefault(x => x.Value == value).Key;
                     resultTextBox.Text += key;
                 }
-                historyTextBox.Text += resultTextBox.Text;
+                //historyTextBox.Text += resultTextBox.Text;
+            }
+        }
+
+        private void mainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Получаем данные, необходимые для соединения
+                Console.WriteLine("Укажите локальный порт");
+                localPort = Convert.ToInt16(Console.ReadLine());
+
+                Console.WriteLine("Укажите удаленный порт");
+                remotePort = Convert.ToInt16(Console.ReadLine());
+
+                Console.WriteLine("Укажите удаленный IP-адрес");
+                remoteIP = IPAddress.Parse(Console.ReadLine());
+
+                // Создаем поток для прослушивания
+                Thread tRec = new Thread(new ThreadStart(Receiver));
+                tRec.Start();
+
+                while (true)
+                {
+                    Send(Console.ReadLine());
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Возникло исключение: " + ex.ToString() + "\n  " + ex.Message);
             }
         }
     }

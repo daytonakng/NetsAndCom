@@ -3,15 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:Lab2"
         mc:Ignorable="d"
-        Title="MainWindow" Height="720" Width="1280">
+        Title="MainWindow" Height="720" Width="1280" Loaded="mainWindow_Loaded">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="49*"/>
-            <ColumnDefinition Width="1231*"/>
+            <ColumnDefinition Width="32*"/>
+            <ColumnDefinition Width="1199*"/>
         </Grid.ColumnDefinitions>
-        <StackPanel Width="1280" Height="300" Background="AliceBlue" Orientation="Horizontal" VerticalAlignment="Top" Grid.ColumnSpan="2">
+        <StackPanel Width="1280" Height="300" Background="AliceBlue" Orientation="Horizontal" VerticalAlignment="Top" Grid.ColumnSpan="3">
             <StackPanel Width="400" Height="200" Background="LightGray" VerticalAlignment="Top" Margin="50,50,0,0">
                 <Label x:Name="enterTextLabel" FontSize="11" HorizontalAlignment="Center">
                     Ввод текста
@@ -20,18 +22,18 @@
 
                 </TextBox>
             </StackPanel>
-            <StackPanel Width="200" Height="100" Background="Transparent" VerticalAlignment="Top" Margin="50,50,0,0">
+            <StackPanel Width="125" Height="100" Background="Transparent" VerticalAlignment="Top" Margin="20,50,0,0">
                 <Button x:Name="codeButton" Width="100" Height="20" Content="Кодировать" Margin="0,10,0,0" Click="codeButton_Click">
 
                 </Button>
                 <Button x:Name="decodeButton" Width="100" Height="20" Content="Декодировать" Margin="0,10,0,0" Click="decodeButton_Click">
 
                 </Button>
-                <Button x:Name="saveButton" Width="100" Height="20" Content="Сохранить" Margin="0,10,0,0" Visibility="Hidden">
+                <Button x:Name="saveButton" Width="100" Height="20" Content="Отправить" Margin="0,10,0,0" Click="saveButton_Click">
 
                 </Button>
             </StackPanel>
-            <StackPanel Width="400" Height="200" Background="LightGray" VerticalAlignment="Top" Margin="50,50,0,0">
+            <StackPanel Width="400" Height="200" Background="LightGray" VerticalAlignment="Top" Margin="20,50,0,0">
                 <Label x:Name="resultTextLable" FontSize="11" HorizontalAlignment="Center">
                     Кодирование/декодирование текста
                 </Label>
@@ -39,16 +41,16 @@
 
                 </TextBox>
             </StackPanel>
-        </StackPanel>
-        <StackPanel Width="1200" Height="300" Margin="1,0,0,50" Background="LightGray" VerticalAlignment="Bottom" HorizontalAlignment="Left" Grid.Column="1">
-            <Label x:Name="historyLabel" FontSize="11" HorizontalAlignment="Center">
-                История
-            </Label>
-            <TextBox x:Name="historyTextBox" Height="225" TextWrapping="Wrap" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto">
-            </TextBox>
-            <Button x:Name="clearButton" Width="150" Height="30" Content="Очистить историю" Margin="0,10,30,0" HorizontalAlignment="Right" Click="clearButton_Click">
-
-            </Button>
+            <StackPanel Width="200" Height="200" VerticalAlignment="Top" Margin="20,50,0,0">
+                <Label Content="IP-адрес:" Margin="10,0,10,0" FontSize="15"/>
+                <xctk:MaskedTextBox x:Name="ipTextBox" Margin="10,0,10,0" FontSize="15"/>
+                
+                <Label Content="Локальный порт:" Margin="10,10,10,0" FontSize="15"/>
+                <TextBox x:Name="localPortTextBox" Margin="10,0,10,10" FontSize="15"/>
+                
+                <Label Content="Удаленный порт:" Margin="10,10,10,0" FontSize="15"/>
+                <TextBox x:Name="remoteTextBox" Margin="10,0,10,10" FontSize="15"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Window>
