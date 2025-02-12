@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Windows;
 
-namespace Lab1
+namespace Lab2
 {
     public partial class MainWindow : Window
     {
@@ -143,30 +143,23 @@ namespace Lab1
                 { ':', "260" },
                 { '-', "261" },
                 { '+', "262" },
-                { '-', "263" },
-                { '=', "264" },
-                { '@', "265" },
-                { '*', "266" },
-                { '/', "267" },
-                { '#', "268" },
-                { '№', "269" },
-                { '-', "270" },
-                { '(', "271" },
-                { ')', "272" },
-                { '[', "273" },
-                { ']', "274" },
-                { '{', "275" },
-                { '}', "276" }
+                { '=', "263" },
+                { '@', "264" },
+                { '*', "265" },
+                { '/', "266" },
+                { '#', "267" },
+                { '№', "268" },
+                { '(', "269" },
+                { ')', "270" },
+                { '[', "271" },
+                { ']', "272" },
+                { '{', "273" },
+                { '}', "274" }
             };
 
         public MainWindow()
         {
             InitializeComponent();
-        }
-
-        private void mainWindow_Loaded(object sender, RoutedEventArgs e)
-        {
-
         }
 
         private void codeButton_Click(object sender, RoutedEventArgs e)
@@ -175,40 +168,37 @@ namespace Lab1
             string text = enterTextBox.Text;
             List<int> textArr = new List<int>();
             string binary = "";
+            int errorCount = 0;
 
-            try
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (!utf8ToKoi8rDictionary.ContainsKey(c))
+                {
+                    errorCount++;
+                }
+            }
+            if (errorCount > 0)
+            {
+                resultTextBox.Text = "Ошибка! Найдены символы, отсутствующие в словаре!";
+            }
+            else
             {
                 for (int i = 0; i < text.Length; i++)
                 {
                     char c = text[i];
-                    if (!utf8ToKoi8rDictionary.ContainsKey(c))
-                    {
-                        resultTextBox.Text = "Ошибка! Некоторые символы отсутствуют в словаре!";
-                        break;
-                    }
-                    else
-                    {
-                        resultTextBox.Text += utf8ToKoi8rDictionary[c];
-                        resultTextBox.Text += " ";
-                        textArr.Add(int.Parse(utf8ToKoi8rDictionary[c]));
-                        binary += Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2);
-                        binary += " ";
-
-                        historyTextBox.Text += utf8ToKoi8rDictionary[c];
-                        historyTextBox.Text += " ";
-                    }
+                    resultTextBox.Text += utf8ToKoi8rDictionary[c];
+                    resultTextBox.Text += " ";
+                    textArr.Add(int.Parse(utf8ToKoi8rDictionary[c]));
+                    binary += Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2);
+                    binary += " ";
                 }
-            }
-            catch (Exception)
-            {
-                resultTextBox.Text = "Ошибка! Некоторые символы отсутствуют в словаре!";
-            }
-            resultTextBox.Text += "\n";
-            resultTextBox.Text += binary;
+                resultTextBox.Text += "\n";
+                resultTextBox.Text += binary;
+                resultTextBox.Text += "\n\n";
 
-            historyTextBox.Text += "\n";
-            historyTextBox.Text += binary;
-            historyTextBox.Text += "\n\n";
+                historyTextBox.Text += resultTextBox.Text;
+            }
         }
 
         private void clearButton_Click(object sender, RoutedEventArgs e)
@@ -221,28 +211,27 @@ namespace Lab1
             resultTextBox.Clear();
             string text = enterTextBox.Text;
             List<string> textArr = [.. text.Split()];
+            int errorCount = 0;
 
-            try
+            foreach (var value in textArr)
+            {
+                if (!utf8ToKoi8rDictionary.ContainsValue(value))
+                {
+                    errorCount++;
+                }
+            }
+            if (errorCount > 0)
+            {
+                resultTextBox.Text = "Ошибка! Найдены цифры, отсутствующие в словаре!";
+            }
+            else
             {
                 foreach (var value in textArr)
                 {
-                    if (!utf8ToKoi8rDictionary.ContainsValue(value))
-                    {
-                        resultTextBox.Text = "Ошибка! Некоторые числа отсутствуют в словаре!";
-                        break;
-                    }
-                    else
-                    {
-                        var key = utf8ToKoi8rDictionary.FirstOrDefault(x => x.Value == value).Key;
-                        resultTextBox.Text += key;
-                        historyTextBox.Text += key;
-                    }
+                    var key = utf8ToKoi8rDictionary.FirstOrDefault(x => x.Value == value).Key;
+                    resultTextBox.Text += key;
                 }
-                historyTextBox.Text += "\n\n";
-            }
-            catch (Exception)
-            {
-                resultTextBox.Text = "Ошибка! Некоторые числа отсутствуют в словаре!";
+                historyTextBox.Text += resultTextBox.Text;
             }
         }
     }
