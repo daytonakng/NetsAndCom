@@ -1,91 +1,72 @@
-﻿using System.Reflection;
-using System.Security.Cryptography;
-using System.Windows;
+﻿using System.Windows;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
-using System.Threading;
+using System.Xml.Linq;
 
 namespace Lab2
 {
     public partial class MainWindow : Window
     {
-        public static IPAddress remoteIP;
-        public static int localPort;
-        public static int remotePort;   
+        private UdpClient udpClient;
+        private int localPort;
+        private int remotePort;
+        private IPEndPoint remoteEndPoint;
+        private IPAddress remoteIp;
 
-        private static void Send(string datagram)
+        public MainWindow()
         {
-            // Создаем UdpClient
-            UdpClient sender = new UdpClient();
+            InitializeComponent();
+        }
 
-            // Создаем endPoint по информации об удаленном хосте
-            IPEndPoint endPoint = new IPEndPoint(remoteIP, remotePort);
+        private void listenButton_Click(object sender, RoutedEventArgs e)
+        {
+            StartListener();
+        }
 
+        async void StartListener()
+        {
+            localPort = Convert.ToInt16(localPortTextBox.Text);
+            remotePort = Convert.ToInt16(remoteTextBox.Text);
+            remoteIp = IPAddress.Parse(ipTextBox.Text);
+
+            udpClient = new UdpClient(localPort);
+            remoteEndPoint = new IPEndPoint(remoteIp, remotePort);
             try
             {
-                // Преобразуем данные в массив байтов
-                byte[] bytes = Encoding.UTF8.GetBytes(datagram);
-
-                // Отправляем данные
-                sender.Send(bytes, bytes.Length, endPoint);
+                while (true)
+                {
+                    var receivedResults = await udpClient.ReceiveAsync();
+                    string receivedMessage = Encoding.UTF8.GetString(receivedResults.Buffer);
+                    Dispatcher.Invoke(() => { resultTextBox.AppendText($"{receivedMessage}\n"); });
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Возникло исключение: " + ex.ToString() + "\n  " + ex.Message);
-            }
-            finally
-            {
-                // Закрыть соединение
-                sender.Close();
+                MessageBox.Show(ex.Message);
             }
         }
 
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
-            try
+            string name = nameTextBox.Text;
+            string message = enterTextBox.Text;
+
+            var local = new IPEndPoint(remoteEndPoint.Address, localPort);
+            UdpClient remoteUDpClient = new UdpClient();
+
+            if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(message))
             {
-                localPort = Convert.ToInt16(localPortTextBox.Text);
-                remotePort = Convert.ToInt16(remoteTextBox.Text);
-                remoteIP = IPAddress.Parse(ipTextBox.Text);
-                while (true)
-                {
-                    Send(enterTextBox.Text);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Возникло исключение: " + ex.ToString() + "\n" + ex.Message);
-            }
+                string fullMessage = $"{name}: {message}";
+                var data = Encoding.UTF8.GetBytes(fullMessage);
+                remoteUDpClient.Send(data, data.Length, local);
+                enterTextBox.Clear();
         }
-
-        public static void Receiver()
-        {
-            // Создаем UdpClient для чтения входящих данных
-            UdpClient receivingUdpClient = new UdpClient(localPort);
-
-            IPEndPoint RemoteIpEndPoint = null;
-
-            try
+            else
             {
-                Console.WriteLine(
-                   "\n-----------*******Общий чат*******-----------");
-
-                while (true)
-                {
-                    byte[] receiveBytes = receivingUdpClient.Receive(
-                       ref RemoteIpEndPoint);
-
-                    // Преобразуем и отображаем данные
-                    string returnData = Encoding.UTF8.GetString(receiveBytes);
-                    Console.WriteLine(" --> " + returnData.ToString());
-                }
+                MessageBox.Show("Ошибка! Введите имя и(или) сообщение");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Возникло исключение: " + ex.ToString() + "\n  " + ex.Message);
-            }
-        }
+}
 
         Dictionary<char, string> utf8ToKoi8rDictionary = new Dictionary<char, string>
             {
@@ -238,12 +219,7 @@ namespace Lab2
                 { '}', "274" }
             };
 
-        public MainWindow()
-        {
-            InitializeComponent();  
-        }
-
-        private void codeButton_Click(object sender, RoutedEventArgs e)
+        private void Encode()
         {
             resultTextBox.Clear();
             string text = enterTextBox.Text;
@@ -281,13 +257,12 @@ namespace Lab2
                 //historyTextBox.Text += resultTextBox.Text;
             }
         }
-
-        private void clearButton_Click(object sender, RoutedEventArgs e)
+        private void codeButton_Click(object sender, RoutedEventArgs e)
         {
-            //historyTextBox.Clear();
+            Encode();
         }
 
-        private void decodeButton_Click(object sender, RoutedEventArgs e)
+        private void Decode()
         {
             resultTextBox.Clear();
             string text = enterTextBox.Text;
@@ -316,33 +291,13 @@ namespace Lab2
             }
         }
 
+        private void decodeButton_Click(object sender, RoutedEventArgs e)
+        {
+            Decode();
+        }
+
         private void mainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                // Получаем данные, необходимые для соединения
-                Console.WriteLine("Укажите локальный порт");
-                localPort = Convert.ToInt16(Console.ReadLine());
-
-                Console.WriteLine("Укажите удаленный порт");
-                remotePort = Convert.ToInt16(Console.ReadLine());
-
-                Console.WriteLine("Укажите удаленный IP-адрес");
-                remoteIP = IPAddress.Parse(Console.ReadLine());
-
-                // Создаем поток для прослушивания
-                Thread tRec = new Thread(new ThreadStart(Receiver));
-                tRec.Start();
-
-                while (true)
-                {
-                    Send(Console.ReadLine());
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Возникло исключение: " + ex.ToString() + "\n  " + ex.Message);
-            }
         }
     }
 }
