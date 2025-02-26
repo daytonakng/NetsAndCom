@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Drawing.Text;
 using System.Net;
 using System.Net.Sockets;
 
@@ -12,125 +11,6 @@ namespace Lab3
         public StreamWriter stw { get; set; }
         public string recieve;
         public string textToSend;
-
-        public ChatBox()
-        {
-            InitializeComponent();
-
-            IPAddress[] localIP = Dns.GetHostAddresses(Dns.GetHostName());
-
-            foreach (IPAddress address in localIP)
-            {
-                if (address.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    serverIpTextBox.Text = address.ToString();
-                }
-            }
-        }
-
-        private void startButton_Click(object sender, EventArgs e)
-        {
-            TcpListener listener = new TcpListener(IPAddress.Any, int.Parse(serverPortTextBox.Text));
-            listener.Start();
-            client = listener.AcceptTcpClient();
-            str = new StreamReader(client.GetStream());
-            stw = new StreamWriter(client.GetStream());
-            stw.AutoFlush = true;
-            chatTCPBox.AppendText("Сервер запущен" + Environment.NewLine);
-
-            backgroundWorker1.RunWorkerAsync();
-            backgroundWorker2.WorkerSupportsCancellation = true;
-        }
-
-        private void connectButton_Click(object sender, EventArgs e)
-        {
-            client = new TcpClient();
-            IPEndPoint ipEnd = new IPEndPoint(IPAddress.Parse(clientIpTextBox.Text), int.Parse(clientPortTextBox.Text));
-
-            try
-            {
-                client.Connect(ipEnd);
-                chatTCPBox.AppendText("Соединение установлено" + Environment.NewLine);
-                str = new StreamReader(client.GetStream());
-                stw = new StreamWriter(client.GetStream());
-                stw.AutoFlush = true;
-
-                backgroundWorker1.RunWorkerAsync();
-                backgroundWorker2.WorkerSupportsCancellation = true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Ошибка в подключении!" + "\n" + ex.Message.ToString());
-            }
-        }
-
-        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
-        {
-            while (client.Connected)
-            {
-                try
-                {
-                    recieve = str.ReadLine();
-                    this.chatTCPBox.Invoke(new MethodInvoker(delegate ()
-                    {
-                        chatTCPBox.AppendText("Собеседник: " + recieve + Environment.NewLine);
-                    }
-                    ));
-                    recieve = "";
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Ошибка в работе backGroundWorker1!" + "\n" + ex.Message.ToString());
-                }
-            }
-        }
-
-        private void backgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
-        {
-            if (client.Connected)
-            {
-                stw.WriteLine(textToSend);
-                this.chatTCPBox.Invoke(new MethodInvoker(delegate ()
-                {
-                    chatTCPBox.AppendText("Вы: " + textToSend + Environment.NewLine);
-                }
-                ));
-            }
-            else
-            {
-                MessageBox.Show("Ошибка отправки сообщения! Клиент не подключен!");
-            }
-
-            backgroundWorker2.CancelAsync();
-        }
-
-        private void sendButton_Click(object sender, EventArgs e)
-        {
-            if (messageBox.Text != "")
-            {
-                textToSend = messageBox.Text;           //ДОБАВИТЬ КОДИРОВАНИЕ
-                backgroundWorker2.RunWorkerAsync();
-            }
-            messageBox.Text = "";
-        }
-
-        private void label4_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void messageBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
-                if (messageBox.Text != "")
-                {
-                    textToSend = messageBox.Text;               //ДОБАВИТЬ КОДИРОВАНИЕ
-                    backgroundWorker2.RunWorkerAsync();
-                }
-                messageBox.Text = "";
-            }
-        }
 
         Dictionary<char, string> utf8ToKoi8rDictionary = new Dictionary<char, string>
             {
@@ -283,36 +163,219 @@ namespace Lab3
                 { '}', "274" }
             };
 
-        private void Encode()
+        public ChatBox()
         {
-            string text = messageBox.Text;
-            List<int> textArr = new List<int>();
-            string binary = "";
-            int errorCount = 0;
+            InitializeComponent();
 
-            for (int i = 0; i < text.Length; i++)
+            //IPAddress[] localIP = Dns.GetHostAddresses(Dns.GetHostName());
+
+            //foreach (IPAddress address in localIP)
+            //{
+            //    if (address.AddressFamily == AddressFamily.InterNetwork)
+            //    {
+            //        serverIpTextBox.Text = address.ToString();
+            //    }
+            //}
+        }
+
+        private void startButton_Click(object sender, EventArgs e)
+        {
+            TcpListener listener = new TcpListener(IPAddress.Any, int.Parse(serverPortTextBox.Text));
+            listener.Start();
+            client = listener.AcceptTcpClient();
+            str = new StreamReader(client.GetStream());
+            stw = new StreamWriter(client.GetStream());
+            stw.AutoFlush = true;
+            chatTCPBox.AppendText("Сервер запущен" + Environment.NewLine);
+
+            backgroundWorker1.RunWorkerAsync();
+            backgroundWorker2.WorkerSupportsCancellation = true;
+        }
+
+        private void connectButton_Click(object sender, EventArgs e)
+        {
+            client = new TcpClient();
+            IPEndPoint ipEnd = new IPEndPoint(IPAddress.Parse(clientIpTextBox.Text), int.Parse(clientPortTextBox.Text));
+
+            try
             {
-                char c = text[i];
-                if (!utf8ToKoi8rDictionary.ContainsKey(c))                      //ПЕРЕДЕЛАТЬ КОДИРОВАНИЕ
+                client.Connect(ipEnd);
+                chatTCPBox.AppendText("Соединение установлено" + Environment.NewLine);
+                str = new StreamReader(client.GetStream());
+                stw = new StreamWriter(client.GetStream());
+                stw.AutoFlush = true;
+
+                backgroundWorker1.RunWorkerAsync();
+                backgroundWorker2.WorkerSupportsCancellation = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка в подключении!" + "\n" + ex.Message.ToString());
+            }
+        }
+
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (client.Connected)
+            {
+                try
                 {
-                    errorCount++;
+                    recieve = str.ReadLine();
+                    this.chatTCPBox.Invoke(new MethodInvoker(delegate ()
+                    {
+                        chatTCPBox.AppendText(recieve + Environment.NewLine);
+                    }
+                    ));
+                    recieve = "";
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Ошибка в работе backGroundWorker1!" + "\n" + ex.Message.ToString());
                 }
             }
-            if (errorCount > 0)
+        }
+
+        private void backgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
+        {
+            if (client.Connected)
             {
-                chatTCPBox.Text = "Ошибка! Найдены символы, отсутствующие в словаре!";
+                stw.WriteLine(textToSend);
+                this.chatTCPBox.Invoke(new MethodInvoker(delegate ()
+                {
+                    chatTCPBox.AppendText(textToSend + Environment.NewLine);
+                }
+                ));
             }
             else
             {
-                for (int i = 0; i < text.Length; i++)
+                MessageBox.Show("Ошибка отправки сообщения! Клиент не подключен!");
+            }
+            backgroundWorker2.CancelAsync();
+        }
+
+        private void sendButton_Click(object sender, EventArgs e)
+        {
+            string name = nameTextBox.Text;
+
+            if (name != "")
+            {
+                if (messageBox.Text != "")
                 {
-                    char c = text[i];
-                    chatTCPBox.AppendText(utf8ToKoi8rDictionary[c] + Environment.NewLine);
-                    textArr.Add(int.Parse(utf8ToKoi8rDictionary[c]));
-                    binary += Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2);
-                    binary += " ";
+                    string text = messageBox.Text;
+
+                    int errorCount = 0;
+
+                    for (int i = 0; i < text.Length; i++)
+                    {
+                        char c = text[i];
+                        if (!utf8ToKoi8rDictionary.ContainsKey(c))
+                        {
+                            errorCount++;
+                        }
+                    }
+                    if (errorCount > 0)
+                    {
+                        chatTCPBox.Text = "Ошибка! Найдены символы, отсутствующие в словаре!\n";
+                    }
+                    else
+                    {
+                        string textBinStr = "";
+                        string textIntStr = "";
+
+                        for (int i = 0; i < text.Length; i++)
+                        {
+                            char c = text[i];
+                            textIntStr += $"{utf8ToKoi8rDictionary[c]} ";
+                            textBinStr += $"{Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2)} ";
+                        }
+                        textToSend = "";
+                        textToSend += $"{name}: {text} {textIntStr} {textBinStr}\n";
+                        backgroundWorker2.RunWorkerAsync();
+                    }
                 }
-                chatTCPBox.AppendText($"\n{binary}\n\n");
+                messageBox.Text = "";
+            }
+            else
+            {
+                MessageBox.Show("Имя пользователя не задано!");
+            }
+        }
+
+        private void messageBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            string name = nameTextBox.Text;
+
+            if (e.KeyCode == Keys.Enter)
+            {
+                if (name != "")
+                {
+                    if (messageBox.Text != "")
+                    {
+                        string text = messageBox.Text;
+
+                        int errorCount = 0;
+
+                        for (int i = 0; i < text.Length; i++)
+                        {
+                            char c = text[i];
+                            if (!utf8ToKoi8rDictionary.ContainsKey(c))
+                            {
+                                errorCount++;
+                            }
+                        }
+                        if (errorCount > 0)
+                        {
+                            chatTCPBox.Text = "Ошибка! Найдены символы, отсутствующие в словаре!\n";
+                        }
+                        else
+                        {
+                            string textBinStr = "";
+                            string textIntStr = "";
+
+                            for (int i = 0; i < text.Length; i++)
+                            {
+                                char c = text[i];
+                                textIntStr += $"{utf8ToKoi8rDictionary[c]} ";
+                                textBinStr += $"{Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2)} ";
+                            }
+                            textToSend = "";
+                            textToSend += $"{name}: {text} {textIntStr} {textBinStr}\n";
+                            backgroundWorker2.RunWorkerAsync();
+                        }
+                    }
+                    messageBox.Text = "";
+                }
+                else
+                {
+                    MessageBox.Show("Имя пользователя не задано!");
+                }
+            }
+        }
+
+        private void ChatBox_Load(object sender, EventArgs e)
+        {
+            mainPanel.Enabled = false;
+        }
+
+        private void serverRB_CheckedChanged(object sender, EventArgs e)
+        {
+            RadioButton serverRB = (RadioButton)sender;
+            if (serverRB.Checked)
+            {
+                mainPanel.Enabled = true;
+                clientPanel.Enabled = false;
+                serverPanel.Enabled = true;
+            }
+        }
+
+        private void clientRB_CheckedChanged(object sender, EventArgs e)
+        {
+            RadioButton clientRB = (RadioButton)sender;
+            if (clientRB.Checked)
+            {
+                mainPanel.Enabled = true;
+                serverPanel.Enabled = false;
+                clientPanel.Enabled = true;
             }
         }
     }

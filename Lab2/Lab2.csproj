@@ -4,12 +4,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>disable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.7.25103.5738" />
-  </ItemGroup>
 
 </Project>
