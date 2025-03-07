@@ -2,63 +2,86 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using System.Windows;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
+using static System.Net.Mime.MediaTypeNames;
+using System.Xml.Linq;
 
 namespace Lab2
 {
     public partial class ChatForm : Form
     {
-        public ChatForm()
+        private int localPort;
+        public string fileName;
+        public string path;
+
+        public ChatForm(string name, int local)
         {
             InitializeComponent();
+            Name = name;
+            localPort = local;
+
+            fileName = DateTime.Now.ToString("dd.MM.yyyy_hh-mm-ss") + ".txt";
+            path = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+            File.Create(path).Close();
         }
 
-        private UdpClient udpClient;
-        private int localPort;
-        private int remotePort;
-        private IPEndPoint remoteEndPoint;
-        private IPAddress remoteIp;
-
-        async void StartListener()
+        async Task ReceiveMessageAsync()
         {
-            localPort = Convert.ToInt16(localPortTextBox.Text);
-            remotePort = Convert.ToInt16(remotePortTextBox.Text);
-            remoteIp = IPAddress.Parse(ipTextBox.Text);
+            using UdpClient receiver = new UdpClient(localPort);
 
-            udpClient = new UdpClient(localPort);
-            remoteEndPoint = new IPEndPoint(remoteIp, remotePort);
-            try
+            while (true)
             {
-                while (true)
+                var result = await receiver.ReceiveAsync();
+                var message = Encoding.UTF8.GetString(result.Buffer);
+
+                chatBox.AppendText(message + Environment.NewLine);
+            }
+
+        }
+
+        private void sendButton_Click(object sender, EventArgs e)
+        {
+            using UdpClient udpSender = new UdpClient();
+            string inputMessage = messageBox.Text;
+
+            int errorCount = 0;
+
+            for (int i = 0; i < inputMessage.Length; i++)
+            {
+                char c = inputMessage[i];
+                if (!utf8ToKoi8rDictionary.ContainsKey(c))
                 {
-                    var receivedResults = await udpClient.ReceiveAsync();
-                    string receivedMessage = Encoding.UTF8.GetString(receivedResults.Buffer);
-                    //Dispatcher.Invoke(() => { resultTextBox.AppendText($"{receivedMessage}\n"); });
+                    errorCount++;
                 }
             }
-            catch (Exception ex)
+            if (errorCount > 0)
             {
-                MessageBox.Show(ex.Message);
+                chatBox.Text = "Ошибка! Найдены символы, отсутствующие в словаре!\n";
+            }
+            else
+            {
+                string textBinStr = "";
+                string textIntStr = "";
+
+                for (int i = 0; i < inputMessage.Length; i++)
+                {
+                    char c = inputMessage[i];
+                    textIntStr += $"{utf8ToKoi8rDictionary[c]} ";
+                    textBinStr += $"{Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2)} ";
+                }
+
+                string message = $"{Name}: {inputMessage}\n{textIntStr}\n{textBinStr}";
+
+                byte[] data = Encoding.UTF8.GetBytes(message);
+                udpSender.SendAsync(data, new IPEndPoint(IPAddress.Parse(ipTextBox.Text), int.Parse(remotePortTextBox.Text)));
+                chatBox.AppendText("Вы: " + inputMessage + Environment.NewLine);
+
+                using (StreamWriter fstream = new StreamWriter(fileName, true))
+                {
+                    fstream.Write(message + Environment.NewLine);
+                }
             }
         }
-
-        //private void sendButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    string message = messageBox.Text;
-
-        //    var local = new IPEndPoint(remoteEndPoint.Address, localPort);
-        //    UdpClient remoteUDpClient = new UdpClient();
-
-        //    if (!string.IsNullOrWhiteSpace(message))
-        //    {
-        //        var data = Encoding.UTF8.GetBytes(message);
-        //        remoteUDpClient.Send(data, data.Length, local);
-        //        messageBox.Clear();
-        //    }
-        //    else
-        //    {
-        //        MessageBox.Show("Ошибка! Введите имя и(или) сообщение");
-        //    }
-        //}
 
         Dictionary<char, string> utf8ToKoi8rDictionary = new Dictionary<char, string>
             {
@@ -211,41 +234,15 @@ namespace Lab2
                 { '}', "274" }
             };
 
-        private void Encode()
-        {
-            chatBox.Clear();
-            string text = messageBox.Text;
-            List<int> textArr = new List<int>();
-            string binary = "";
-            int errorCount = 0;
 
-            for (int i = 0; i < text.Length; i++)
-            {
-                char c = text[i];
-                if (!utf8ToKoi8rDictionary.ContainsKey(c))
-                {
-                    errorCount++;
-                }
-            }
-            if (errorCount > 0)
-            {
-                chatBox.Text = "Ошибка! Найдены символы, отсутствующие в словаре!";
-            }
-            else
-            {
-                for (int i = 0; i < text.Length; i++)
-                {
-                    char c = text[i];
-                    chatBox.Text += utf8ToKoi8rDictionary[c];
-                    chatBox.Text += " ";
-                    textArr.Add(int.Parse(utf8ToKoi8rDictionary[c]));
-                    binary += Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2);
-                    binary += " ";
-                }
-                chatBox.Text += "\n";
-                chatBox.Text += binary;
-                chatBox.Text += "\n\n";
-            }
+        private void ChatForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            System.Windows.Forms.Application.Exit();
+        }
+
+        private void ChatForm_Load(object sender, EventArgs e)
+        {
+            _ = ReceiveMessageAsync();
         }
     }
 }

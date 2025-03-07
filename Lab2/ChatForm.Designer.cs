@@ -33,10 +33,8 @@
             backgroundWorker2 = new System.ComponentModel.BackgroundWorker();
             sendButton = new Button();
             label3 = new Label();
-            label2 = new Label();
             label1 = new Label();
             remotePortTextBox = new TextBox();
-            localPortTextBox = new TextBox();
             ipTextBox = new MaskedTextBox();
             messageBox = new TextBox();
             SuspendLayout();
@@ -47,37 +45,29 @@
             chatBox.Location = new Point(14, 12);
             chatBox.Name = "chatBox";
             chatBox.ReadOnly = true;
-            chatBox.Size = new Size(645, 262);
+            chatBox.Size = new Size(645, 235);
             chatBox.TabIndex = 46;
             chatBox.Text = "";
             // 
             // sendButton
             // 
             sendButton.Cursor = Cursors.Hand;
-            sendButton.Location = new Point(679, 298);
+            sendButton.Location = new Point(679, 274);
             sendButton.Name = "sendButton";
             sendButton.Size = new Size(182, 29);
             sendButton.TabIndex = 40;
             sendButton.Text = "Отправить";
             sendButton.UseVisualStyleBackColor = true;
+            sendButton.Click += sendButton_Click;
             // 
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(679, 189);
+            label3.Location = new Point(679, 135);
             label3.Name = "label3";
             label3.Size = new Size(128, 20);
             label3.TabIndex = 43;
             label3.Text = "Удаленный порт:";
-            // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Location = new Point(679, 117);
-            label2.Name = "label2";
-            label2.Size = new Size(128, 20);
-            label2.TabIndex = 42;
-            label2.Text = "Локальный порт:";
             // 
             // label1
             // 
@@ -90,17 +80,10 @@
             // 
             // remotePortTextBox
             // 
-            remotePortTextBox.Location = new Point(679, 212);
+            remotePortTextBox.Location = new Point(679, 158);
             remotePortTextBox.Name = "remotePortTextBox";
             remotePortTextBox.Size = new Size(182, 27);
             remotePortTextBox.TabIndex = 37;
-            // 
-            // localPortTextBox
-            // 
-            localPortTextBox.Location = new Point(679, 140);
-            localPortTextBox.Name = "localPortTextBox";
-            localPortTextBox.Size = new Size(182, 27);
-            localPortTextBox.TabIndex = 34;
             // 
             // ipTextBox
             // 
@@ -111,7 +94,7 @@
             // 
             // messageBox
             // 
-            messageBox.Location = new Point(14, 298);
+            messageBox.Location = new Point(14, 274);
             messageBox.Name = "messageBox";
             messageBox.Size = new Size(645, 27);
             messageBox.TabIndex = 39;
@@ -120,18 +103,18 @@
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(885, 351);
+            ClientSize = new Size(885, 319);
             Controls.Add(chatBox);
             Controls.Add(sendButton);
             Controls.Add(label3);
-            Controls.Add(label2);
             Controls.Add(label1);
             Controls.Add(remotePortTextBox);
-            Controls.Add(localPortTextBox);
             Controls.Add(ipTextBox);
             Controls.Add(messageBox);
             Name = "ChatForm";
             Text = "Form1";
+            FormClosed += ChatForm_FormClosed;
+            Load += ChatForm_Load;
             ResumeLayout(false);
             PerformLayout();
         }
@@ -143,10 +126,8 @@
         private System.ComponentModel.BackgroundWorker backgroundWorker2;
         private Button sendButton;
         private Label label3;
-        private Label label2;
         private Label label1;
         private TextBox remotePortTextBox;
-        private TextBox localPortTextBox;
         private MaskedTextBox ipTextBox;
         private TextBox messageBox;
     }

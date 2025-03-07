@@ -12,6 +12,11 @@ namespace Lab3
         public string recieve;
         public string textToSend;
 
+        public string fileClientName;
+        public string fileServerName;
+        public string pathClient;
+        public string pathServer;
+
         Dictionary<char, string> utf8ToKoi8rDictionary = new Dictionary<char, string>
             {
                 { 'a', "128" },
@@ -167,15 +172,23 @@ namespace Lab3
         {
             InitializeComponent();
 
-            //IPAddress[] localIP = Dns.GetHostAddresses(Dns.GetHostName());
+            fileClientName = DateTime.Now.ToString("dd.MM.yyyy_hh-mm-ss") + "_client.txt";
+            pathClient = Path.Combine(Directory.GetCurrentDirectory(), fileClientName);
+            File.Create(pathClient).Close();
 
-            //foreach (IPAddress address in localIP)
-            //{
-            //    if (address.AddressFamily == AddressFamily.InterNetwork)
-            //    {
-            //        serverIpTextBox.Text = address.ToString();
-            //    }
-            //}
+            //fileServerName = DateTime.Now.ToString("dd.MM.yyyy_hh-mm-ss") + "_server.txt";
+            //pathServer = Path.Combine(Directory.GetCurrentDirectory(), fileServerName);
+            //File.Create(pathServer).Close();
+
+            IPAddress[] localIP = Dns.GetHostAddresses(Dns.GetHostName());
+
+            foreach (IPAddress address in localIP)
+            {
+                if (address.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    serverIpTextBox.Text = address.ToString();
+                }
+            }
         }
 
         private void startButton_Click(object sender, EventArgs e)
@@ -243,6 +256,10 @@ namespace Lab3
                 this.chatTCPBox.Invoke(new MethodInvoker(delegate ()
                 {
                     chatTCPBox.AppendText(textToSend + Environment.NewLine);
+                    using (StreamWriter fstream = new StreamWriter(fileClientName, true))   
+                    {
+                        fstream.Write(textToSend + Environment.NewLine);
+                    }
                 }
                 ));
             }
