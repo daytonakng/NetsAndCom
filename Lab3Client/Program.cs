@@ -7,7 +7,10 @@ internal class Program
         SimpleClient client = new SimpleClient();
         client.ConnectToServer("127.0.0.1", 5000);
 
-        Console.WriteLine("Введите сообщение для отправки:");
-        client.SendMessage(Console.ReadLine());
+        while(true)
+        {
+            Console.WriteLine("Введите сообщение для отправки:");
+            client.SendMessage(Console.ReadLine());
+        }
     }
 }

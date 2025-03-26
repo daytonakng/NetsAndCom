@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Lab3Server
 {
@@ -51,13 +47,20 @@ namespace Lab3Server
 
             try
             {
-                while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                while (true)
                 {
-                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    Console.WriteLine("Получено: " + message);
+                    if ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                        Console.WriteLine("Получено от клиента: " + message);
 
-                    byte[] response = Encoding.UTF8.GetBytes("Echo: " + message);
-                    stream.Write(response, 0, response.Length);
+                        byte[] response = Encoding.UTF8.GetBytes(message);
+                        foreach (var clientItem in clients)
+                        {
+                            clientItem.GetStream().Write(response, 0, response.Length);
+
+                        }
+                    }
                 }
             }
             catch (Exception ex)

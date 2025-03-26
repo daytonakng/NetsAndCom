@@ -83,14 +83,14 @@
             remotePortTextBox.Location = new Point(679, 158);
             remotePortTextBox.Name = "remotePortTextBox";
             remotePortTextBox.Size = new Size(182, 27);
-            remotePortTextBox.TabIndex = 37;
+            remotePortTextBox.TabIndex = 1;
             // 
             // ipTextBox
             // 
             ipTextBox.Location = new Point(679, 75);
             ipTextBox.Name = "ipTextBox";
             ipTextBox.Size = new Size(182, 27);
-            ipTextBox.TabIndex = 33;
+            ipTextBox.TabIndex = 0;
             // 
             // messageBox
             // 

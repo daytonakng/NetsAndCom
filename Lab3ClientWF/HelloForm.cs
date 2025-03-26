@@ -1,5 +1,14 @@
-﻿
-namespace Lab2
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Lab3ClientWF
 {
     public partial class HelloForm : Form
     {
@@ -8,26 +17,20 @@ namespace Lab2
             InitializeComponent();
         }
 
-        private void HelloForm_Load(object sender, EventArgs e)
-        {
-
-        }
-
         private void sendButton_Click(object sender, EventArgs e)
         {
-            if (nameTextBox.Text == null && localPortTextBox.Text == null)
+            if (nameTextBox.Text == null)
             {
-                MessageBox.Show("Имя и(или) локальный порт не заданы\nЗаполните поля и повторите попытку!");
+                MessageBox.Show("Имя не задано\nЗаполните поле и повторите попытку!");
             }
             else
             {
                 try
                 {
                     string name = nameTextBox.Text;
-                    int localPort = int.Parse(localPortTextBox.Text);
 
-                    ChatForm chatForm = new ChatForm(name, localPort);
-                    chatForm.Show();
+                    ClientForm clientForm = new ClientForm();
+                    clientForm.Show();
                     this.Hide();
                 }
                 catch (Exception ex)

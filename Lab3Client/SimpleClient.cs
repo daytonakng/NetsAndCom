@@ -16,20 +16,23 @@ namespace Lab3Console
         {
             client = new TcpClient(ipAddress, port);
             stream = client.GetStream();
-            Console.WriteLine("Подключено к серверу.");
+            Console.WriteLine("Подключено к серверу");
 
-            ReadMessages();
+            Task.Run(ReadMessages);
         }
 
-        private void ReadMessages()
+        private async void ReadMessages()
         {
             byte[] buffer = new byte[1024];
             int bytesRead;
 
-            while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+            while (true)
             {
-                string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                Console.WriteLine("Сервер пишет: " + message);
+                if ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    //Console.WriteLine("Пришло с сервера: " + message);
+                }
             }
         }
 
@@ -39,7 +42,7 @@ namespace Lab3Console
             {
                 byte[] data = Encoding.UTF8.GetBytes(message);
                 stream.Write(data, 0, data.Length);
-                Console.WriteLine("Сообщение отправлено: " + message);
+                Console.WriteLine("Вы: " + message);
             }
         }
     }

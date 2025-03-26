@@ -1,91 +1,120 @@
 using System.Net.Sockets;
-using System.Net;
 using System.Text;
-using System.Windows;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
-using static System.Net.Mime.MediaTypeNames;
-using System.Xml.Linq;
 
-namespace Lab2
+namespace Lab3ClientWF
 {
-    public partial class ChatForm : Form
+    public partial class ClientForm : Form
     {
-        private int localPort;
+        private TcpClient client;
+        private NetworkStream stream;
+
         public string fileName;
         public string path;
 
-        public ChatForm(string name, int local)
+        public ClientForm()
         {
             InitializeComponent();
-            Name = name;
-            localPort = local;
 
             fileName = DateTime.Now.ToString("dd.MM.yyyy_hh-mm-ss") + ".txt";
             path = Path.Combine(Directory.GetCurrentDirectory(), fileName);
             File.Create(path).Close();
         }
 
-        async Task ReceiveMessageAsync()
+        private void connectButton_Click(object sender, EventArgs e)
         {
-            using UdpClient receiver = new UdpClient(localPort);
-
             try
             {
-                while (true)
-                {
-                    var result = await receiver.ReceiveAsync();
-                    var message = Encoding.UTF8.GetString(result.Buffer);
+                client = new TcpClient(clientIpTextBox.Text, int.Parse(clientPortTextBox.Text));
+                stream = client.GetStream();
 
-                    chatBox.AppendText(message + Environment.NewLine);
-                }
+                //string name = nameTextBox.Text;
+                //byte[] nameData = Encoding.UTF8.GetBytes($"{name} подключился\n");
+                //stream.Write(nameData, 0, nameData.Length);
+
+                Thread receiveThread = new Thread(ReceiveData);
+                receiveThread.Start();
+
+                clientBox.AppendText("Вы подключились к серверу\n");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Возникло исключени: " +  ex.Message + ex.StackTrace);
+                MessageBox.Show($"Ошибка подключения:\n{ex.Message}\n{ex.StackTrace}");
             }
         }
 
         private void sendButton_Click(object sender, EventArgs e)
         {
-            using UdpClient udpSender = new UdpClient();
-            string inputMessage = messageBox.Text;
-
-            int errorCount = 0;
-
-            for (int i = 0; i < inputMessage.Length; i++)
+            try
             {
-                char c = inputMessage[i];
-                if (!utf8ToKoi8rDictionary.ContainsKey(c))
+                if (nameTextBox.Text != "")
                 {
-                    errorCount++;
+                    string inputMessage = messageBox.Text;
+                    string name = nameTextBox.Text;
+                    int errorCount = 0;
+
+                    for (int i = 0; i < inputMessage.Length; i++)
+                    {
+                        char c = inputMessage[i];
+                        if (!utf8ToKoi8rDictionary.ContainsKey(c))
+                        {
+                            errorCount++;
+                        }
+                    }
+                    if (errorCount > 0)
+                    {
+                        clientBox.Text = "Ошибка! Найдены символы, отсутствующие в словаре!\n";
+                    }
+                    else
+                    {
+                        string textBinStr = "";
+                        string textIntStr = "";
+
+                        for (int i = 0; i < inputMessage.Length; i++)
+                        {
+                            char c = inputMessage[i];
+                            textIntStr += $"{utf8ToKoi8rDictionary[c]} ";
+                            textBinStr += $"{Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2)} ";
+                        }
+                        string message = $"{name}: {inputMessage}\n{textIntStr}\n{textBinStr}";
+                        byte[] data = Encoding.UTF8.GetBytes(message);
+                        stream.Write(data, 0, data.Length);
+
+                        clientBox.AppendText($"Вы: {inputMessage}\n");
+                        messageBox.Text = "";
+
+                        using (StreamWriter fstream = new StreamWriter(fileName, true))
+                        {
+                            fstream.Write(message + Environment.NewLine);
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Заполните поле «Имя» и повторите попытку", "Ошибка имени пользователя", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
-            if (errorCount > 0)
+            catch (Exception ex)
             {
-                chatBox.Text = "Ошибка! Найдены символы, отсутствующие в словаре!\n";
+                MessageBox.Show($"Ошибка отправки:\n{ex.Message}\n{ex.StackTrace}");
             }
-            else
+        }
+
+        private void ReceiveData()
+        {
+            try
             {
-                string textBinStr = "";
-                string textIntStr = "";
+                byte[] buffer = new byte[1024];
+                int bytes;
 
-                for (int i = 0; i < inputMessage.Length; i++)
+                while ((bytes = stream.Read(buffer, 0, buffer.Length)) != 0)
                 {
-                    char c = inputMessage[i];
-                    textIntStr += $"{utf8ToKoi8rDictionary[c]} ";
-                    textBinStr += $"{Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2)} ";
+                    string data = Encoding.UTF8.GetString(buffer, 0, bytes);
+                    clientBox.Invoke((MethodInvoker)delegate { clientBox.AppendText($"{data}\n"); });
                 }
-
-                string message = $"{Name}: {inputMessage}\n{textIntStr}\n{textBinStr}";
-
-                byte[] data = Encoding.UTF8.GetBytes(message);
-                udpSender.SendAsync(data, new IPEndPoint(IPAddress.Parse(ipTextBox.Text), int.Parse(remotePortTextBox.Text)));
-                chatBox.AppendText("Вы: " + inputMessage + Environment.NewLine);
-
-                using (StreamWriter fstream = new StreamWriter(fileName, true))
-                {
-                    fstream.Write(message + Environment.NewLine);
-                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Потеряно соединение с сервером", "Ошибка подключения", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
@@ -240,15 +269,10 @@ namespace Lab2
                 { '}', "274" }
             };
 
-
-        private void ChatForm_FormClosed(object sender, FormClosedEventArgs e)
+        private void ClientForm_Load(object sender, EventArgs e)
         {
-            System.Windows.Forms.Application.Exit();
-        }
-
-        private void ChatForm_Load(object sender, EventArgs e)
-        {
-            _ = ReceiveMessageAsync();
+            Left = 100;
+            Top = 800;
         }
     }
 }
