@@ -116,7 +116,7 @@
             // 
             clientIpTextBox.Culture = new System.Globalization.CultureInfo("en-EN");
             clientIpTextBox.Location = new Point(19, 68);
-            clientIpTextBox.Mask = "000.0.0.0";
+            clientIpTextBox.Mask = "000.000.000.00";
             clientIpTextBox.Name = "clientIpTextBox";
             clientIpTextBox.Size = new Size(182, 27);
             clientIpTextBox.TabIndex = 0;
@@ -157,6 +157,7 @@
             messageBox.Name = "messageBox";
             messageBox.Size = new Size(645, 27);
             messageBox.TabIndex = 4;
+            messageBox.KeyDown += messageBox_KeyDown;
             // 
             // ClientForm
             // 
@@ -168,7 +169,7 @@
             Controls.Add(sendButton);
             Controls.Add(messageBox);
             Name = "ClientForm";
-            Text = "Form1";
+            Text = "Пользователь";
             Load += ClientForm_Load;
             clientPanel.ResumeLayout(false);
             clientPanel.PerformLayout();

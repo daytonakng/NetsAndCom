@@ -1,16 +1,15 @@
 using System.Net.Sockets;
-using System.Net;
 using System.Text;
 
-namespace Lab2
+namespace Lab4
 {
-    public partial class ChatForm : Form
+    public partial class Chat : Form
     {
         private int localPort;
         public string fileName;
         public string path;
 
-        public ChatForm(string name, int local)
+        public Chat(string name, int local)
         {
             InitializeComponent();
             Name = name;
@@ -30,18 +29,35 @@ namespace Lab2
                 while (true)
                 {
                     var result = await receiver.ReceiveAsync();
-                    var message = Encoding.UTF8.GetString(result.Buffer);
 
-                    chatBox.AppendText(message + Environment.NewLine);
+                    UDPMessage receivedMessage = UDPMessage.Deserialize(result.Buffer);
+                    if (receivedMessage.IsCheck)
+                    {
+                        UDPMessage response = new UDPMessage(true, "Проверка успешно пройдена!");
+                        byte[] responseBytes = response.Serialize();
+                        await receiver.SendAsync(responseBytes, responseBytes.Length, result.RemoteEndPoint);
+                    }
+                    else
+                    {
+                        if (receivedMessage.Length == receivedMessage.Message.Length)
+                        {
+                            string messageText = Encoding.UTF8.GetString(receivedMessage.Message);
+                            chatBox.AppendText(messageText + Environment.NewLine);
+                        }
+                        else
+                        {
+                            chatBox.AppendText("Сообщение повреждено!" + Environment.NewLine);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Возникло исключени: " +  ex.Message + ex.StackTrace);
+                MessageBox.Show("Возникло исключение: " + ex.Message + ex.StackTrace);
             }
         }
 
-        private void sendButton_Click(object sender, EventArgs e)
+        private async void sendButton_Click(object sender, EventArgs e)
         {
             using UdpClient udpSender = new UdpClient();
             string inputMessage = messageBox.Text;
@@ -74,14 +90,18 @@ namespace Lab2
 
                 string message = $"{Name}: {inputMessage}\n{textIntStr}\n{textBinStr}";
 
-                byte[] data = Encoding.UTF8.GetBytes(message);
-                udpSender.SendAsync(data, new IPEndPoint(IPAddress.Parse(ipTextBox.Text), int.Parse(remotePortTextBox.Text)));
+                UDPMessage newMessage = new UDPMessage(false, message);
+                byte[] messageBytes = newMessage.Serialize();
+
+                await udpSender.SendAsync(messageBytes, messageBytes.Length, ipTextBox.Text, int.Parse(remotePortTextBox.Text));
                 chatBox.AppendText("Вы: " + inputMessage + Environment.NewLine);
 
                 using (StreamWriter fstream = new StreamWriter(fileName, true))
                 {
                     fstream.Write(message + Environment.NewLine);
                 }
+
+                messageBox.Clear();
             }
         }
 
@@ -236,15 +256,59 @@ namespace Lab2
                 { '}', "274" }
             };
 
-
-        private void ChatForm_FormClosed(object sender, FormClosedEventArgs e)
+        private void Chat_FormClosed(object sender, FormClosedEventArgs e)
         {
-            System.Windows.Forms.Application.Exit();
+            Application.Exit();
         }
 
-        private void ChatForm_Load(object sender, EventArgs e)
+        private void Chat_Load(object sender, EventArgs e)
         {
             _ = ReceiveMessageAsync();
+        }
+    }
+
+    [Serializable]
+    public class UDPMessage
+    {
+        public bool IsCheck { get; set; }
+        public int Length { get; set; }
+        public byte[] Message { get; set; }
+        public UDPMessage(bool isCheck, string messageText)
+        {
+            IsCheck = isCheck;
+            byte[] messageBytes = Encoding.UTF8.GetBytes(messageText);
+            Message = messageBytes;
+            Length = messageBytes.Length;
+        }
+
+        public UDPMessage() { }
+        public byte[] Serialize()
+        {
+            using (MemoryStream m = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(m))
+                {
+                    writer.Write(IsCheck);
+                    writer.Write(Length);
+                    writer.Write(Message);
+                }
+                return m.ToArray();
+            }
+        }
+
+        public static UDPMessage Deserialize(byte[] data)
+        {
+            UDPMessage result = new UDPMessage();
+            using (MemoryStream m = new MemoryStream(data))
+            {
+                using (BinaryReader reader = new BinaryReader(m))
+                {
+                    result.IsCheck = reader.ReadBoolean();
+                    result.Length = reader.ReadInt32();
+                    result.Message = reader.ReadBytes(data.Length - sizeof(bool) - sizeof(int));
+                }
+            }
+            return result;
         }
     }
 }

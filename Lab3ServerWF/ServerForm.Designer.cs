@@ -103,7 +103,7 @@
             // 
             serverIpTextBox.Culture = new System.Globalization.CultureInfo("en-EN");
             serverIpTextBox.Location = new Point(19, 70);
-            serverIpTextBox.Mask = "000.0.0.0";
+            serverIpTextBox.Mask = "000.000.000.00";
             serverIpTextBox.Name = "serverIpTextBox";
             serverIpTextBox.Size = new Size(182, 27);
             serverIpTextBox.TabIndex = 0;
@@ -126,7 +126,7 @@
             Controls.Add(serverPanel);
             Controls.Add(serverBox);
             Name = "ServerForm";
-            Text = "Form1";
+            Text = "Сервер";
             FormClosed += ServerForm_FormClosed;
             Load += ServerForm_Load;
             serverPanel.ResumeLayout(false);

@@ -24,69 +24,16 @@ namespace Lab3ClientWF
         {
             try
             {
-                client = new TcpClient(clientIpTextBox.Text, int.Parse(clientPortTextBox.Text));
-                stream = client.GetStream();
-
-                //string name = nameTextBox.Text;
-                //byte[] nameData = Encoding.UTF8.GetBytes($"{name} подключился\n");
-                //stream.Write(nameData, 0, nameData.Length);
-
-                Thread receiveThread = new Thread(ReceiveData);
-                receiveThread.Start();
-
-                clientBox.AppendText("Вы подключились к серверу\n");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка подключения:\n{ex.Message}\n{ex.StackTrace}");
-            }
-        }
-
-        private void sendButton_Click(object sender, EventArgs e)
-        {
-            try
-            {
                 if (nameTextBox.Text != "")
                 {
-                    string inputMessage = messageBox.Text;
-                    string name = nameTextBox.Text;
-                    int errorCount = 0;
+                    client = new TcpClient(clientIpTextBox.Text, int.Parse(clientPortTextBox.Text));
+                    stream = client.GetStream();
 
-                    for (int i = 0; i < inputMessage.Length; i++)
-                    {
-                        char c = inputMessage[i];
-                        if (!utf8ToKoi8rDictionary.ContainsKey(c))
-                        {
-                            errorCount++;
-                        }
-                    }
-                    if (errorCount > 0)
-                    {
-                        clientBox.Text = "Ошибка! Найдены символы, отсутствующие в словаре!\n";
-                    }
-                    else
-                    {
-                        string textBinStr = "";
-                        string textIntStr = "";
+                    Thread receiveThread = new Thread(ReceiveData);
+                    receiveThread.Start();
 
-                        for (int i = 0; i < inputMessage.Length; i++)
-                        {
-                            char c = inputMessage[i];
-                            textIntStr += $"{utf8ToKoi8rDictionary[c]} ";
-                            textBinStr += $"{Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2)} ";
-                        }
-                        string message = $"{name}: {inputMessage}\n{textIntStr}\n{textBinStr}";
-                        byte[] data = Encoding.UTF8.GetBytes(message);
-                        stream.Write(data, 0, data.Length);
-
-                        clientBox.AppendText($"Вы: {inputMessage}\n");
-                        messageBox.Text = "";
-
-                        using (StreamWriter fstream = new StreamWriter(fileName, true))
-                        {
-                            fstream.Write(message + Environment.NewLine);
-                        }
-                    }
+                    clientBox.AppendText("Вы подключились к серверу\n");
+                    nameTextBox.ReadOnly = true;
                 }
                 else
                 {
@@ -95,8 +42,63 @@ namespace Lab3ClientWF
             }
             catch (Exception ex)
             {
+                MessageBox.Show($"Ошибка подключения:\n{ex.Message}\n{ex.StackTrace}");
+            }
+        }
+
+        private void SendMessage()
+        {
+            try
+            {
+                string inputMessage = messageBox.Text;
+                string name = nameTextBox.Text;
+                int errorCount = 0;
+
+                for (int i = 0; i < inputMessage.Length; i++)
+                {
+                    char c = inputMessage[i];
+                    if (!utf8ToKoi8rDictionary.ContainsKey(c))
+                    {
+                        errorCount++;
+                    }
+                }
+                if (errorCount > 0)
+                {
+                    clientBox.Text = "Ошибка! Найдены символы, отсутствующие в словаре!\n";
+                }
+                else
+                {
+                    string textBinStr = "";
+                    string textIntStr = "";
+
+                    for (int i = 0; i < inputMessage.Length; i++)
+                    {
+                        char c = inputMessage[i];
+                        textIntStr += $"{utf8ToKoi8rDictionary[c]} ";
+                        textBinStr += $"{Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2)} ";
+                    }
+                    string message = $"{name}: {inputMessage}\n{textIntStr}\n{textBinStr}";
+                    byte[] data = Encoding.UTF8.GetBytes(message);
+                    stream.Write(data, 0, data.Length);
+
+                    clientBox.AppendText($"Вы: {inputMessage}\n");
+                    messageBox.Text = "";
+
+                    using (StreamWriter fstream = new StreamWriter(fileName, true))
+                    {
+                        fstream.Write(message + Environment.NewLine);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
                 MessageBox.Show($"Ошибка отправки:\n{ex.Message}\n{ex.StackTrace}");
             }
+        }
+
+        private void sendButton_Click(object sender, EventArgs e)
+        {
+            SendMessage();
         }
 
         private void ReceiveData()
@@ -273,6 +275,14 @@ namespace Lab3ClientWF
         {
             Left = 100;
             Top = 800;
+        }
+
+        private void messageBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                SendMessage();
+            }
         }
     }
 }

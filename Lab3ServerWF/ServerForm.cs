@@ -60,27 +60,34 @@ namespace Lab3ServerWF
             byte[] buffer = new byte[1024];
             int bytes;
 
-            while ((bytes = stream.Read(buffer, 0, buffer.Length)) != 0)
+            try
             {
-                string data = Encoding.UTF8.GetString(buffer, 0, bytes);
-                serverBox.Invoke((MethodInvoker)delegate { serverBox.AppendText($"{data}\n"); });
-
-                byte[] response = Encoding.UTF8.GetBytes(data);
-                foreach (var clientItem in clients)
+                while ((bytes = stream.Read(buffer, 0, buffer.Length)) != 0)
                 {
-                    if (clientItem != client)
+                    string data = Encoding.UTF8.GetString(buffer, 0, bytes);
+                    serverBox.Invoke((MethodInvoker)delegate { serverBox.AppendText($"{data}\n"); });
+
+                    byte[] response = Encoding.UTF8.GetBytes(data);
+                    foreach (var clientItem in clients)
                     {
-                        clientItem.GetStream().Write(response, 0, response.Length);
+                        if (clientItem != client)
+                        {
+                            clientItem.GetStream().Write(response, 0, response.Length);
+                        }
+                    }
+
+                    using (StreamWriter fstream = new StreamWriter(fileName, true))
+                    {
+                        fstream.Write(data + Environment.NewLine);
                     }
                 }
 
-                using (StreamWriter fstream = new StreamWriter(fileName, true))
-                {
-                    fstream.Write(data + Environment.NewLine);
-                }
+                client.Close();
             }
-
-            client.Close();
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Возникло исключение\n{ex.Message}\n{ex.StackTrace}");
+            }
         }
 
         private void ServerForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -90,7 +97,7 @@ namespace Lab3ServerWF
 
         private void ServerForm_Load(object sender, EventArgs e)
         {
-            Left = 800;
+            Left = 700;
             Top = 200;
         }
     }
