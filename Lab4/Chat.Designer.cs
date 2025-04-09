@@ -35,6 +35,7 @@
             ipTextBox = new MaskedTextBox();
             messageBox = new TextBox();
             remotePortTextBox = new MaskedTextBox();
+            checkButton = new Button();
             SuspendLayout();
             // 
             // chatBox
@@ -84,6 +85,7 @@
             ipTextBox.Name = "ipTextBox";
             ipTextBox.Size = new Size(182, 27);
             ipTextBox.TabIndex = 0;
+            ipTextBox.Text = "127001";
             // 
             // messageBox
             // 
@@ -91,6 +93,7 @@
             messageBox.Name = "messageBox";
             messageBox.Size = new Size(645, 27);
             messageBox.TabIndex = 2;
+            messageBox.KeyDown += messageBox_KeyDown;
             // 
             // remotePortTextBox
             // 
@@ -100,12 +103,25 @@
             remotePortTextBox.Name = "remotePortTextBox";
             remotePortTextBox.Size = new Size(182, 27);
             remotePortTextBox.TabIndex = 1;
+            remotePortTextBox.Text = "5001";
+            // 
+            // checkButton
+            // 
+            checkButton.Cursor = Cursors.Hand;
+            checkButton.Location = new Point(684, 220);
+            checkButton.Name = "checkButton";
+            checkButton.Size = new Size(182, 29);
+            checkButton.TabIndex = 54;
+            checkButton.Text = "Проверка соединения";
+            checkButton.UseVisualStyleBackColor = true;
+            checkButton.Click += checkButton_Click;
             // 
             // Chat
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(885, 319);
+            Controls.Add(checkButton);
             Controls.Add(remotePortTextBox);
             Controls.Add(chatBox);
             Controls.Add(sendButton);
@@ -129,5 +145,6 @@
         private MaskedTextBox ipTextBox;
         private TextBox messageBox;
         private MaskedTextBox remotePortTextBox;
+        private Button checkButton;
     }
 }

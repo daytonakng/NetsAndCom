@@ -1,5 +1,6 @@
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 
 namespace Lab4
 {
@@ -8,6 +9,8 @@ namespace Lab4
         private int localPort;
         public string fileName;
         public string path;
+
+        public bool checkConn = true;
 
         public Chat(string name, int local)
         {
@@ -20,6 +23,28 @@ namespace Lab4
             File.Create(path).Close();
         }
 
+        private async void checkButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                UdpClient senderMess = new UdpClient();
+                string test = "Тест";
+                byte[] messBytes = Encoding.UTF8.GetBytes(test);
+
+                UDPMessage check = new UDPMessage(true, messBytes);
+                string checkString = JsonSerializer.Serialize(check);
+                byte[] checkStringBytes = Encoding.UTF8.GetBytes(checkString);
+
+                await senderMess.SendAsync(checkStringBytes, checkStringBytes.Length, ipTextBox.Text, int.Parse(remotePortTextBox.Text));
+
+                checkButton.Enabled = false;
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("Возникло исключение при проверке соединения:\n" + ex.Message + ex.StackTrace);
+            }
+        }
+
         async Task ReceiveMessageAsync()
         {
             using UdpClient receiver = new UdpClient(localPort);
@@ -29,35 +54,48 @@ namespace Lab4
                 while (true)
                 {
                     var result = await receiver.ReceiveAsync();
+                    string jsonString = Encoding.UTF8.GetString(result.Buffer);
+                    UDPMessage receivedMessage = JsonSerializer.Deserialize<UDPMessage>(jsonString);
 
-                    UDPMessage receivedMessage = UDPMessage.Deserialize(result.Buffer);
-                    if (receivedMessage.IsCheck)
+                    if (checkConn)
                     {
-                        UDPMessage response = new UDPMessage(true, "Проверка успешно пройдена!");
-                        byte[] responseBytes = response.Serialize();
-                        await receiver.SendAsync(responseBytes, responseBytes.Length, result.RemoteEndPoint);
+                        if (receivedMessage.IsCheck)
+                        {
+                            string responseString = "Проверка пройдена";
+                            byte[] responseBytes = Encoding.UTF8.GetBytes(responseString);
+
+                            UDPMessage checkRes = new UDPMessage(false, responseBytes);
+                            string checkResString = JsonSerializer.Serialize(checkRes);
+                            byte[] checkResBytes = Encoding.UTF8.GetBytes(checkResString);
+
+                            await receiver.SendAsync(checkResBytes, checkResBytes.Length, ipTextBox.Text, int.Parse(remotePortTextBox.Text));
+                        }
+
+                        if (Encoding.UTF8.GetString(receivedMessage.Message) == "Проверка пройдена")
+                        {
+                            MessageBox.Show("Проверка успешно пройдена");
+                            checkConn = false;
+                        }
+                    }
+
+                    if (receivedMessage.Length == receivedMessage.Message.Length)
+                    {
+                        string messageText = Encoding.UTF8.GetString(receivedMessage.Message);
+                        chatBox.AppendText(messageText + Environment.NewLine);
                     }
                     else
                     {
-                        if (receivedMessage.Length == receivedMessage.Message.Length)
-                        {
-                            string messageText = Encoding.UTF8.GetString(receivedMessage.Message);
-                            chatBox.AppendText(messageText + Environment.NewLine);
-                        }
-                        else
-                        {
-                            chatBox.AppendText("Сообщение повреждено!" + Environment.NewLine);
-                        }
+                        chatBox.AppendText("Сообщение повреждено!" + Environment.NewLine);
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Возникло исключение: " + ex.Message + ex.StackTrace);
+                MessageBox.Show("Возникло исключение при получении сообщения\n" + ex.Message + ex.StackTrace);
             }
         }
 
-        private async void sendButton_Click(object sender, EventArgs e)
+        private async void SendMessage()
         {
             using UdpClient udpSender = new UdpClient();
             string inputMessage = messageBox.Text;
@@ -87,21 +125,42 @@ namespace Lab4
                     textIntStr += $"{utf8ToKoi8rDictionary[c]} ";
                     textBinStr += $"{Convert.ToString(int.Parse(utf8ToKoi8rDictionary[c]), 2)} ";
                 }
-
-                string message = $"{Name}: {inputMessage}\n{textIntStr}\n{textBinStr}";
-
-                UDPMessage newMessage = new UDPMessage(false, message);
-                byte[] messageBytes = newMessage.Serialize();
-
-                await udpSender.SendAsync(messageBytes, messageBytes.Length, ipTextBox.Text, int.Parse(remotePortTextBox.Text));
-                chatBox.AppendText("Вы: " + inputMessage + Environment.NewLine);
-
-                using (StreamWriter fstream = new StreamWriter(fileName, true))
+                try
                 {
-                    fstream.Write(message + Environment.NewLine);
+                    string message = $"{Name}: {inputMessage}\n{textIntStr}\n{textBinStr}";
+                    byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+                    UDPMessage newMessage = new UDPMessage(true, messageBytes);
+
+                    string messageString = JsonSerializer.Serialize(newMessage);
+                    byte[] messageStringBytes = Encoding.UTF8.GetBytes(messageString);
+
+                    await udpSender.SendAsync(messageStringBytes, messageStringBytes.Length, ipTextBox.Text, int.Parse(remotePortTextBox.Text));
+                    chatBox.AppendText("Вы: " + inputMessage + Environment.NewLine);
+
+                    using (StreamWriter fstream = new StreamWriter(fileName, true))
+                    {
+                        fstream.Write(message + Environment.NewLine);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Возникло исключение при отправке сообщения\n" + ex.Message + ex.StackTrace);
                 }
 
                 messageBox.Clear();
+            }
+        }
+
+        private void sendButton_Click(object sender, EventArgs e)
+        {
+            SendMessage();
+        }
+
+        private void messageBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                SendMessage();
             }
         }
 
@@ -273,42 +332,14 @@ namespace Lab4
         public bool IsCheck { get; set; }
         public int Length { get; set; }
         public byte[] Message { get; set; }
-        public UDPMessage(bool isCheck, string messageText)
+
+        public UDPMessage(bool isCheck, byte[] messageBytes)
         {
             IsCheck = isCheck;
-            byte[] messageBytes = Encoding.UTF8.GetBytes(messageText);
             Message = messageBytes;
             Length = messageBytes.Length;
         }
 
         public UDPMessage() { }
-        public byte[] Serialize()
-        {
-            using (MemoryStream m = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(m))
-                {
-                    writer.Write(IsCheck);
-                    writer.Write(Length);
-                    writer.Write(Message);
-                }
-                return m.ToArray();
-            }
-        }
-
-        public static UDPMessage Deserialize(byte[] data)
-        {
-            UDPMessage result = new UDPMessage();
-            using (MemoryStream m = new MemoryStream(data))
-            {
-                using (BinaryReader reader = new BinaryReader(m))
-                {
-                    result.IsCheck = reader.ReadBoolean();
-                    result.Length = reader.ReadInt32();
-                    result.Message = reader.ReadBytes(data.Length - sizeof(bool) - sizeof(int));
-                }
-            }
-            return result;
-        }
     }
 }

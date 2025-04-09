@@ -81,6 +81,7 @@
             nameTextBox.Name = "nameTextBox";
             nameTextBox.Size = new Size(182, 27);
             nameTextBox.TabIndex = 0;
+            nameTextBox.Text = "user";
             // 
             // localPortTextBox
             // 
@@ -90,6 +91,7 @@
             localPortTextBox.Name = "localPortTextBox";
             localPortTextBox.Size = new Size(182, 27);
             localPortTextBox.TabIndex = 1;
+            localPortTextBox.Text = "5001";
             // 
             // Hello
             // 
